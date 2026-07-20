@@ -11,7 +11,14 @@ const smiley = [8]u8{
     0b11000011,
 };
 
-export fn start() void {}
+export fn start() void {
+    w4.palette.* = .{
+        w4.Color.fromInt(0x000000),
+        w4.Color.fromInt(0x555555),
+        w4.Color.fromInt(0xAAAAAA),
+        w4.Color.fromInt(0xFFFFFF),
+    };
+}
 
 export fn update() void {
     w4.draw.color_1 = .palette_2;
