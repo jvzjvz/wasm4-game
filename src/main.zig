@@ -17,10 +17,16 @@ const Obstacle = struct {
     position: [2]f32 = .{0, 0},
 };
 
+var arena_mem: [1024 * 4]u8 = undefined;
+var fba = std.heap.FixedBufferAllocator.init(&arena_mem);
+var arena = std.heap.ArenaAllocator.init(fba.allocator());
+var prev_input: w4.Gamepad = undefined;
+
 var guy = Guy{};
 var obstacles: [MAX_OBSTACLES]Obstacle = undefined;
 
 export fn start() void {
+
     w4.palette.* = .{
         BLACK,
         DARK_RED,
@@ -35,12 +41,16 @@ export fn start() void {
         .color_4 = .palette_4,
     };
 
+    guy.position[1] = 50;
+
     for (&obstacles, 0..) |*ob, i| {
         _ = i;
         ob.position = .{150, 50};
     }
+
 }
 
+var count: i32 = 0;
 export fn update() void {
 
     for (&obstacles, 0..) |*ob, i| {
@@ -48,7 +58,15 @@ export fn update() void {
         ob.position[0] -= 0.5;
     }
 
-    guy.position[1] = 50;
+    {
+        const input = w4.gamepads[0];
+        if (prev_input.button_1) {
+            w4.trace("hi");
+            count += 1;
+        }
+
+        prev_input = input;
+    }
 
     w4.text("Hello from Zig!", 10, 10);
 
@@ -70,6 +88,8 @@ export fn update() void {
         .color_3 = .palette_3,
         .color_4 = .palette_4,
     };
+
+    _ = arena.reset(.retain_capacity);
 }
 
 pub const ui_width = 158;
