@@ -8,13 +8,13 @@ const PURPLE = w4.Color.fromInt(0x5e4069);
 const LIGHT_RED = w4.Color.fromInt(0xc4181f);
 
 const Guy = struct {
-    position: [2]i32 = .{0, 0},
+    position: [2]f32 = .{0, 0},
     anger: u8 = 0,
     punch_power: u8 = 0,
 };
 
 const Obstacle = struct {
-    position: [2]i32 = .{0, 0},
+    position: [2]f32 = .{0, 0},
 };
 
 var guy = Guy{};
@@ -34,13 +34,18 @@ export fn start() void {
         .color_3 = .palette_3,
         .color_4 = .palette_4,
     };
+
+    for (&obstacles, 0..) |*ob, i| {
+        _ = i;
+        ob.position = .{150, 50};
+    }
 }
 
 export fn update() void {
 
     for (&obstacles, 0..) |*ob, i| {
-        const idx: i32 = @intCast(i);
-        ob.position[1] = idx * 10;
+        _ = i;
+        ob.position[0] -= 0.5;
     }
 
     guy.position[1] = 50;
@@ -48,7 +53,7 @@ export fn update() void {
     w4.text("Hello from Zig!", 10, 10);
 
     w4.blit(&ui, 1, 107, ui_width, ui_height, .{.format = .bpp_2});
-    w4.rect(guy.position[0], guy.position[1], 16, 16);
+    w4.rect(@intFromFloat(guy.position[0]), @intFromFloat(guy.position[1]), 16, 16);
     w4.text("Press X to blink", 16, 90);
 
     w4.draw.* = .{
@@ -56,7 +61,7 @@ export fn update() void {
         .color_2 = .palette_3,
     };
     for (&obstacles) |*ob| {
-        w4.rect(ob.position[0], ob.position[1], 16, 16);
+        w4.rect(@intFromFloat(ob.position[0]), @intFromFloat(ob.position[1]), 16, 16);
     }
 
     w4.draw.* = .{
