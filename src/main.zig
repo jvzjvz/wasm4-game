@@ -1,22 +1,31 @@
+const std = @import("std");
 const w4 = @import("wasm4");
 
-const smiley = [8]u8{
-    0b11000011,
-    0b10000001,
-    0b00100100,
-    0b00100100,
-    0b00000000,
-    0b00100100,
-    0b10011001,
-    0b11000011,
+const MAX_OBSTACLES: u8 = 30;
+const BLACK = w4.Color.fromInt(0x120a19);
+const DARK_RED = w4.Color.fromInt(0x7e1f23);
+const PURPLE = w4.Color.fromInt(0x5e4069);
+const LIGHT_RED = w4.Color.fromInt(0xc4181f);
+
+const Guy = struct {
+    position: [2]i32 = .{0, 0},
+    anger: u8 = 0,
+    punch_power: u8 = 0,
 };
+
+const Obstacle = struct {
+    position: [2]i32 = .{0, 0},
+};
+
+var guy = Guy{};
+var obstacles: [MAX_OBSTACLES]Obstacle = undefined;
 
 export fn start() void {
     w4.palette.* = .{
-        w4.Color.fromInt(0x120a19), // black
-        w4.Color.fromInt(0x7e1f23), // dark red
-        w4.Color.fromInt(0x5e4069), // purple
-        w4.Color.fromInt(0xc4181f), // light red
+        BLACK,
+        DARK_RED,
+        PURPLE,
+        LIGHT_RED,
     };
 
     w4.draw.* = .{
@@ -28,16 +37,34 @@ export fn start() void {
 }
 
 export fn update() void {
-    // w4.draw.color_1 = .palette_2;
-    // w4.text("Hello from Zig!", 10, 10);
-    //
-    // if (w4.gamepads[0].button_1) {
-    //     w4.draw.color_1 = .palette_4;
-    // }
+
+    for (&obstacles, 0..) |*ob, i| {
+        const idx: i32 = @intCast(i);
+        ob.position[1] = idx * 10;
+    }
+
+    guy.position[1] = 50;
+
+    w4.text("Hello from Zig!", 10, 10);
 
     w4.blit(&ui, 1, 107, ui_width, ui_height, .{.format = .bpp_2});
-    // w4.blit(&smiley, 76, 76, 8, 8, .{});
+    w4.rect(guy.position[0], guy.position[1], 16, 16);
     w4.text("Press X to blink", 16, 90);
+
+    w4.draw.* = .{
+        .color_1 = .palette_3,
+        .color_2 = .palette_3,
+    };
+    for (&obstacles) |*ob| {
+        w4.rect(ob.position[0], ob.position[1], 16, 16);
+    }
+
+    w4.draw.* = .{
+        .color_1 = .palette_1,
+        .color_2 = .palette_2,
+        .color_3 = .palette_3,
+        .color_4 = .palette_4,
+    };
 }
 
 pub const ui_width = 158;
