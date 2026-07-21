@@ -93,4 +93,3 @@ export fn update() void {
 
     _ = arena.reset(.retain_capacity);
 }
-
