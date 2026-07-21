@@ -61,7 +61,8 @@ export fn update() void {
     {
         const input = w4.gamepads[0];
         if (prev_input.button_1) {
-            w4.trace("hi");
+            const s = std.fmt.allocPrint(arena.allocator(), "count: {}", .{count}) catch "";
+            w4.trace(s);
             count += 1;
         }
 
