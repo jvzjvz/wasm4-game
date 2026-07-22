@@ -96,11 +96,11 @@ export fn update() void {
         }
 
         if (input.button_1) {
-            guy.face_direction = .Left;
+            guy.face_direction = .Right;
         }
 
         if (input.button_2) {
-            guy.face_direction = .Right;
+            guy.face_direction = .Left;
         }
 
         prev_input = input;
@@ -121,9 +121,9 @@ export fn update() void {
         const y: i32 = @intFromFloat(guy.position.y);
 
         if (guy.face_direction == .Left) {
-            w4.line(x, y, x + len, y);
-        } else if (guy.face_direction == .Right){
             w4.line(x - len, y, x, y);
+        } else if (guy.face_direction == .Right){
+            w4.line(x, y, x + len, y);
         }
     }
 
