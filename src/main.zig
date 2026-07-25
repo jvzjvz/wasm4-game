@@ -11,12 +11,12 @@ const LIGHT_RED = w4.Color.fromInt(0xc4181f);
 const Direction = enum {
     Left, Right,
 
-    fn value(direction: Direction) f32 {
-        return switch (direction) {
-            .Left => -1.0,
-            .Right => 1.0,
-        };
-    }
+    // fn value(direction: Direction) i32 {
+    //     return switch (direction) {
+    //         .Left => -1,
+    //         .Right => 1,
+    //     };
+    // }
 };
 
 const vec2 = struct {
@@ -36,8 +36,16 @@ const Guy = struct {
     punch_power: u8,
 };
 
+const Obstacle_Kind = enum {
+    Car,
+    SmallGuy,
+    BigGuy,
+};
+
 const Obstacle = struct {
+    kind: Obstacle_Kind,
     position: vec2,
+    speed: f32,
 };
 
 var arena_mem: [1024 * 4]u8 = undefined;
@@ -50,8 +58,17 @@ var guy = std.mem.zeroInit(Guy, .{
 });
 
 var obstacles: [MAX_OBSTACLES]Obstacle = undefined;
+var obstacle_count: i32 = 0;
+var waves_defeated: u8 = 0;
+
+const rand: std.Random = undefined;
 
 export fn start() void {
+    var seed: u64 = undefined;
+    try std.posix.getrandom(std.mem.asBytes(&seed));
+
+    var prng: std.Random.DefaultPrng = .init(seed);(seed);
+    rand = prng.random();
 
     w4.palette.* = .{
         BLACK,
@@ -74,13 +91,18 @@ export fn start() void {
         ob.position = .{.x = 150, .y = 50};
     }
 
+    spawn_wave();
 }
 
 var count: i32 = 0;
 export fn update() void {
+    if (obstacle_count <= 0) {
+        waves_defeated += 1;
+        spawn_wave();
+    }
 
-    for (&obstacles, 0..) |*ob, i| {
-        _ = i;
+    for (0..obstacle_count) |i| {
+        var ob = &obstacles[i];
         ob.position.x -= 0.5;
     }
 
@@ -141,7 +163,8 @@ export fn update() void {
             .color_4 = .palette_4,
         };
 
-        w4.blit(&assets.guy_idle, guy.face_direction.value() * x, y, assets.guy_idle_width, assets.guy_idle_height, .{.format = .bpp_2});
+        // guy.face_direction.value() * 
+        w4.blit(&assets.guy_idle, x, y, assets.guy_idle_width, assets.guy_idle_height, .{.format = .bpp_2});
 
         w4.draw.* = .{
             .color_1 = .palette_4,
@@ -165,7 +188,14 @@ export fn update() void {
         .color_1 = .palette_3,
         .color_2 = .palette_3,
     };
-    for (&obstacles) |*ob| {
+    // for (&obstacles) |*ob| {
+    //     w4.rect(@intFromFloat(ob.position.x), @intFromFloat(ob.position.y), 16, 16);
+    // }
+
+    for (0..obstacle_count) |i| {
+        var ob = &obstacles[i];
+        ob.position.x -= 0.5;
+
         w4.rect(@intFromFloat(ob.position.x), @intFromFloat(ob.position.y), 16, 16);
     }
 
@@ -178,6 +208,22 @@ export fn update() void {
     w4.blit(&assets.ui, 1, 107, assets.ui_width, assets.ui_height, .{.format = .bpp_2});
 
     _ = arena.reset(.retain_capacity);
+}
+
+fn spawn_wave() void {
+    const x_left_spawn: f32 = -180.0;
+    const x_right_spawn: f32 = 180.0;
+    // const rand = std.crypto.random;
+    const b = rand.boolean();
+
+    const obstacles_to_spawn = waves_defeated * 2 + 1;
+
+    for (0..obstacles_to_spawn) |i| {
+        obstacles[i] = std.mem.zeroInit(Obstacle, .{});
+        obstacles[i].position.x = if (b) x_left_spawn else x_right_spawn;
+    }
+
+    obstacle_count = obstacles_to_spawn;
 }
 
 fn clamp(comptime T: type, value: T, lower: T, upper: T) T {
