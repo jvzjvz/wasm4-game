@@ -8,6 +8,29 @@ const DARK_RED = w4.Color.fromInt(0x7e1f23);
 const PURPLE = w4.Color.fromInt(0x5e4069);
 const LIGHT_RED = w4.Color.fromInt(0xc4181f);
 
+const Rand = struct {
+    state: u32 = undefined,
+
+    fn init(self: *Rand, seed: u32) void {
+        self.state = seed;
+    }
+
+    fn next(self: *Rand) u32 {
+        self.state = self.state *% 1103515245 +% 12345;
+        return self.state;
+    }
+
+    fn range(self: *Rand, lower: i32, upper: i32) i32 {
+        const u_range = @as(u32, @intCast(lower - upper + 1));
+        const offset = @as(i32, @intCast(self.next() % u_range));
+        return lower + offset;
+    }
+
+    fn boolean(self: *Rand) bool {
+        return (self.next() & 1) == 1;
+    }
+};
+
 const Direction = enum {
     Left, Right,
 
@@ -60,15 +83,9 @@ var guy = std.mem.zeroInit(Guy, .{
 var obstacles: [MAX_OBSTACLES]Obstacle = undefined;
 var obstacle_count: i32 = 0;
 var waves_defeated: u8 = 0;
-
-const rand: std.Random = undefined;
+const rand: Rand = undefined;
 
 export fn start() void {
-    var seed: u64 = undefined;
-    try std.posix.getrandom(std.mem.asBytes(&seed));
-
-    var prng: std.Random.DefaultPrng = .init(seed);(seed);
-    rand = prng.random();
 
     w4.palette.* = .{
         BLACK,
@@ -94,8 +111,20 @@ export fn start() void {
     spawn_wave();
 }
 
-var count: i32 = 0;
+var game_started = false;
+var frames_since_game_start = 0;
+
 export fn update() void {
+    const input = w4.gamepads[0];
+
+    if (!game_started) {
+        frames_since_game_start += 1;
+        rand.state +%= (w4.mouse_x + 123) * (w4.mouse_y * 67) + frames_since_game_start;
+
+        if (input.button_1) {
+            game_started = true;
+        }
+    }
     if (obstacle_count <= 0) {
         waves_defeated += 1;
         spawn_wave();
@@ -107,7 +136,6 @@ export fn update() void {
     }
 
     {
-        const input = w4.gamepads[0];
         if (input.button_left) {
             guy.position.x -= Guy.SPEED;
         } else if (input.button_right) {
