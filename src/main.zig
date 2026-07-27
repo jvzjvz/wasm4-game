@@ -81,9 +81,9 @@ var guy = std.mem.zeroInit(Guy, .{
 });
 
 var obstacles: [MAX_OBSTACLES]Obstacle = undefined;
-var obstacle_count: i32 = 0;
+var obstacle_count: u32 = 0;
 var waves_defeated: u8 = 0;
-const rand: Rand = undefined;
+var rand: Rand = undefined;
 
 export fn start() void {
 
@@ -112,19 +112,23 @@ export fn start() void {
 }
 
 var game_started = false;
-var frames_since_game_start = 0;
+var frames_since_game_start: u32 = 0;
 
 export fn update() void {
     const input = w4.gamepads[0];
 
     if (!game_started) {
         frames_since_game_start += 1;
-        rand.state +%= (w4.mouse_x + 123) * (w4.mouse_y * 67) + frames_since_game_start;
+
+        const x: u32 = @intCast(w4.mouse_x.*);
+        const y: u32 = @intCast(w4.mouse_y.*);
+        rand.state +%= (x +% @as(u32, 123)) +% (y + @as(u32, 67)) + frames_since_game_start;
 
         if (input.button_1) {
             game_started = true;
         }
     }
+
     if (obstacle_count <= 0) {
         waves_defeated += 1;
         spawn_wave();
@@ -176,7 +180,6 @@ export fn update() void {
     w4.text("Hello from Zig!", 10, 10);
 
 
-
     // guy draw
     {
 
@@ -191,8 +194,8 @@ export fn update() void {
             .color_4 = .palette_4,
         };
 
-        // guy.face_direction.value() * 
-        w4.blit(&assets.guy_idle, x, y, assets.guy_idle_width, assets.guy_idle_height, .{.format = .bpp_2});
+        const flip_x = if (guy.face_direction == .Left) false else true;
+        w4.blit(&assets.guy_idle, x, y, assets.guy_idle_width, assets.guy_idle_height, .{.format = .bpp_2, .flip_x = flip_x });
 
         w4.draw.* = .{
             .color_1 = .palette_4,
@@ -200,8 +203,6 @@ export fn update() void {
         };
 
         const len = 40;
-        // const x: i32 = @intFromFloat(guy.position.x);
-        // const y: i32 = @intFromFloat(guy.position.y);
 
         if (guy.face_direction == .Left) {
             w4.line(x - len, y, x, y);
@@ -216,6 +217,7 @@ export fn update() void {
         .color_1 = .palette_3,
         .color_2 = .palette_3,
     };
+
     // for (&obstacles) |*ob| {
     //     w4.rect(@intFromFloat(ob.position.x), @intFromFloat(ob.position.y), 16, 16);
     // }
@@ -241,7 +243,6 @@ export fn update() void {
 fn spawn_wave() void {
     const x_left_spawn: f32 = -180.0;
     const x_right_spawn: f32 = 180.0;
-    // const rand = std.crypto.random;
     const b = rand.boolean();
 
     const obstacles_to_spawn = waves_defeated * 2 + 1;
